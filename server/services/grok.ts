@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 import type { ChatCompletionRequest } from "@shared/schema";
-import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export class GrokService {
   private client: OpenAI;
@@ -13,15 +12,15 @@ export class GrokService {
   }
 
   async createChatCompletion(request: ChatCompletionRequest, messages: Array<{role: string, content: string}>) {
-    const systemMessages: ChatCompletionMessageParam[] = request.systemPrompt ? [{ role: "system", content: request.systemPrompt }] : [];
+    const systemMessages = request.systemPrompt ? [{ role: "system", content: request.systemPrompt }] : [];
     
-    const allMessages: ChatCompletionMessageParam[] = [
+    const allMessages = [
       ...systemMessages,
       ...messages.map(msg => ({
         role: msg.role as "user" | "assistant" | "system",
         content: msg.content
-      } as ChatCompletionMessageParam))
-    ];
+      }))
+    ] as any;
 
     const response = await this.client.chat.completions.create({
       model: request.model || "grok-3-latest",
@@ -43,7 +42,7 @@ export class GrokService {
         role: msg.role as "user" | "assistant" | "system",
         content: msg.content
       }))
-    ];
+    ] as any;
 
     const stream = await this.client.chat.completions.create({
       model: request.model || "grok-3-latest",

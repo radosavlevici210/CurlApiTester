@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { grokService } from "./services/grok";
+import { enhancedGrokService } from "./services/enhanced-grok";
 import { advancedAI } from "./services/advanced-ai";
 import { visualizationService } from "./services/visualization";
 import { githubService } from "./services/github-integration";
@@ -283,15 +284,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Advanced AI Analysis
+  // Enhanced AI Analysis with xAI Grok
   app.post("/api/ai/analyze-code", isAuthenticated, async (req: any, res: Response) => {
     try {
       const { code, language } = req.body;
-      const analysis = await advancedAI.analyzeCode(code, language);
+      if (!code || !language) {
+        return res.status(400).json({ error: "Code and language are required" });
+      }
+      const analysis = await enhancedGrokService.codeAnalysis(code, language);
       res.json(analysis);
     } catch (error) {
       console.error("Code analysis error:", error);
       res.status(500).json({ error: "Failed to analyze code" });
+    }
+  });
+
+  // Text summarization
+  app.post("/api/ai/summarize", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { text } = req.body;
+      if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      const summary = await enhancedGrokService.summarizeText(text);
+      res.json({ summary });
+    } catch (error) {
+      console.error("Summarization error:", error);
+      res.status(500).json({ error: "Failed to summarize text" });
+    }
+  });
+
+  // Sentiment analysis
+  app.post("/api/ai/sentiment", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { text } = req.body;
+      if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      const sentiment = await enhancedGrokService.analyzeSentiment(text);
+      res.json(sentiment);
+    } catch (error) {
+      console.error("Sentiment analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze sentiment" });
+    }
+  });
+
+  // Problem solving
+  app.post("/api/ai/solve-problem", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { problem, domain } = req.body;
+      if (!problem) {
+        return res.status(400).json({ error: "Problem description is required" });
+      }
+      const solution = await enhancedGrokService.solveComplexProblem(problem, domain);
+      res.json(solution);
+    } catch (error) {
+      console.error("Problem solving error:", error);
+      res.status(500).json({ error: "Failed to solve problem" });
     }
   });
 
