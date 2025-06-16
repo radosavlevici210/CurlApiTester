@@ -1,12 +1,15 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { grokService } from "./services/grok";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   chatCompletionSchema, 
   insertConversationSchema, 
   insertMessageSchema,
-  updateConversationSchema
+  updateConversationSchema,
+  ENTERPRISE_LICENSE
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -15,12 +18,31 @@ interface ChatRequest extends Request {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // Get all conversations
-  app.get("/api/conversations", async (req: Request, res: Response) => {
+  // Auth middleware
+  await setupAuth(app);
+
+  // License and copyright endpoint
+  app.get("/api/license", (req: Request, res: Response) => {
+    res.json(ENTERPRISE_LICENSE);
+  });
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      // For now, use a default user ID of 1
-      const conversations = await storage.getConversationsByUser(1);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Get all conversations
+  app.get("/api/conversations", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const conversations = await storage.getConversationsByUser(userId);
       res.json(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -29,12 +51,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a specific conversation with messages
-  app.get("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.get("/api/conversations/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
       const conversation = await storage.getConversation(id);
       
-      if (!conversation) {
+      if (!conversation || conversation.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
 
@@ -47,11 +70,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new conversation
-  app.post("/api/conversations", async (req: Request, res: Response) => {
+  app.post("/api/conversations", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = insertConversationSchema.parse({
         ...req.body,
-        userId: 1, // Default user for demo
+        userId,
       });
       
       const conversation = await storage.createConversation(validatedData);
@@ -63,16 +87,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update conversation
-  app.patch("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.patch("/api/conversations/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
       const validatedData = updateConversationSchema.parse(req.body);
       
-      const conversation = await storage.updateConversation(id, validatedData);
-      if (!conversation) {
+      // Verify ownership
+      const existing = await storage.getConversation(id);
+      if (!existing || existing.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
       
+      const conversation = await storage.updateConversation(id, validatedData);
       res.json(conversation);
     } catch (error) {
       console.error("Error updating conversation:", error);
@@ -81,15 +108,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete conversation
-  app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.delete("/api/conversations/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const deleted = await storage.deleteConversation(id);
+      const userId = req.user.claims.sub;
       
-      if (!deleted) {
+      // Verify ownership
+      const existing = await storage.getConversation(id);
+      if (!existing || existing.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
       
+      const deleted = await storage.deleteConversation(id);
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting conversation:", error);
@@ -98,8 +128,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chat completion endpoint with streaming support
-  app.post("/api/chat/completions", async (req: ChatRequest, res: Response) => {
+  app.post("/api/chat/completions", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const validatedData = chatCompletionSchema.parse(req.body);
       
       // Get existing messages if conversationId provided
@@ -107,6 +138,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let conversationId = validatedData.conversationId;
       
       if (conversationId) {
+        const conversation = await storage.getConversation(conversationId);
+        if (!conversation || conversation.userId !== userId) {
+          return res.status(404).json({ error: "Conversation not found" });
+        }
+        
         const existingMessages = await storage.getMessagesByConversation(conversationId);
         messages = existingMessages.map(msg => ({
           role: msg.role,
@@ -116,11 +152,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create new conversation
         const conversation = await storage.createConversation({
           title: validatedData.message.substring(0, 50) + (validatedData.message.length > 50 ? "..." : ""),
-          userId: 1,
-          systemPrompt: validatedData.systemPrompt || "You are a helpful assistant.",
+          userId,
+          systemPrompt: validatedData.systemPrompt || "You are a helpful AI assistant.",
           model: validatedData.model,
           temperature: Math.round(validatedData.temperature * 100),
           maxTokens: validatedData.maxTokens,
+          isPrivate: validatedData.isPrivate,
+          visualizationEnabled: validatedData.enableVisualization,
+          githubRepoConnected: validatedData.githubRepo,
         });
         conversationId = conversation.id;
       }
@@ -128,8 +167,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add user message
       const userMessage = await storage.createMessage({
         conversationId: conversationId!,
+        userId,
         role: "user",
         content: validatedData.message,
+        attachments: validatedData.attachments || [],
       });
 
       messages.push({

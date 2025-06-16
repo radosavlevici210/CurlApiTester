@@ -1,25 +1,32 @@
 import { 
   users, 
   conversations, 
-  messages, 
+  messages,
+  notifications,
+  userDevices,
+  organizations,
   type User, 
-  type InsertUser, 
+  type UpsertUser, 
   type Conversation,
   type InsertConversation,
   type UpdateConversation,
   type Message,
-  type InsertMessage
+  type InsertMessage,
+  type Notification,
+  type UserDevice,
+  type Organization
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
 
   // Conversation operations
   getConversation(id: number): Promise<Conversation | undefined>;
-  getConversationsByUser(userId: number): Promise<Conversation[]>;
+  getConversationsByUser(userId: string): Promise<Conversation[]>;
   createConversation(conversation: InsertConversation): Promise<Conversation>;
   updateConversation(id: number, updates: UpdateConversation): Promise<Conversation | undefined>;
   deleteConversation(id: number): Promise<boolean>;
@@ -28,112 +35,183 @@ export interface IStorage {
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   deleteMessagesByConversation(conversationId: number): Promise<boolean>;
+
+  // Device management
+  registerDevice(userId: string, deviceInfo: { deviceId: string; deviceName: string; deviceType: string }): Promise<UserDevice>;
+  getUserDevices(userId: string): Promise<UserDevice[]>;
+  updateDeviceActivity(deviceId: string): Promise<void>;
+
+  // Notifications
+  createNotification(notification: { userId: string; type: string; title: string; message: string; data?: any }): Promise<Notification>;
+  getUserNotifications(userId: string, unreadOnly?: boolean): Promise<Notification[]>;
+  markNotificationRead(id: number): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private conversations: Map<number, Conversation>;
-  private messages: Map<number, Message>;
-  private currentUserId: number;
-  private currentConversationId: number;
-  private currentMessageId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.conversations = new Map();
-    this.messages = new Map();
-    this.currentUserId = 1;
-    this.currentConversationId = 1;
-    this.currentMessageId = 1;
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
+  // Conversation operations
   async getConversation(id: number): Promise<Conversation | undefined> {
-    return this.conversations.get(id);
+    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
+    return conversation || undefined;
   }
 
-  async getConversationsByUser(userId: number): Promise<Conversation[]> {
-    return Array.from(this.conversations.values())
-      .filter(conv => conv.userId === userId)
-      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime());
+  async getConversationsByUser(userId: string): Promise<Conversation[]> {
+    return await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.userId, userId))
+      .orderBy(desc(conversations.updatedAt));
   }
 
   async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
-    const id = this.currentConversationId++;
-    const now = new Date();
-    const conversation: Conversation = {
-      ...insertConversation,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.conversations.set(id, conversation);
+    const [conversation] = await db
+      .insert(conversations)
+      .values({
+        ...insertConversation,
+        organizationId: insertConversation.organizationId || null,
+        userId: insertConversation.userId || null,
+        systemPrompt: insertConversation.systemPrompt || null,
+        githubRepoConnected: insertConversation.githubRepoConnected || null,
+        githubBranch: insertConversation.githubBranch || null,
+        isPrivate: insertConversation.isPrivate ?? true,
+        isEncrypted: insertConversation.isEncrypted ?? false,
+        visualizationEnabled: insertConversation.visualizationEnabled ?? false,
+      })
+      .returning();
     return conversation;
   }
 
   async updateConversation(id: number, updates: UpdateConversation): Promise<Conversation | undefined> {
-    const existing = this.conversations.get(id);
-    if (!existing) return undefined;
-
-    const updated: Conversation = {
-      ...existing,
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.conversations.set(id, updated);
-    return updated;
+    const [conversation] = await db
+      .update(conversations)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(conversations.id, id))
+      .returning();
+    return conversation || undefined;
   }
 
   async deleteConversation(id: number): Promise<boolean> {
-    const deleted = this.conversations.delete(id);
-    if (deleted) {
-      // Also delete associated messages
-      await this.deleteMessagesByConversation(id);
-    }
-    return deleted;
+    await this.deleteMessagesByConversation(id);
+    const result = await db.delete(conversations).where(eq(conversations.id, id));
+    return result.rowCount > 0;
   }
 
+  // Message operations
   async getMessagesByConversation(conversationId: number): Promise<Message[]> {
-    return Array.from(this.messages.values())
-      .filter(msg => msg.conversationId === conversationId)
-      .sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId))
+      .orderBy(messages.createdAt);
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
-    const id = this.currentMessageId++;
-    const message: Message = {
-      ...insertMessage,
-      id,
-      createdAt: new Date(),
-    };
-    this.messages.set(id, message);
+    const [message] = await db
+      .insert(messages)
+      .values({
+        ...insertMessage,
+        userId: insertMessage.userId || null,
+        encryptedContent: insertMessage.encryptedContent || null,
+        attachments: insertMessage.attachments || [],
+        metadata: insertMessage.metadata || {},
+      })
+      .returning();
     return message;
   }
 
   async deleteMessagesByConversation(conversationId: number): Promise<boolean> {
-    const messagesToDelete = Array.from(this.messages.entries())
-      .filter(([_, msg]) => msg.conversationId === conversationId)
-      .map(([id, _]) => id);
-
-    messagesToDelete.forEach(id => this.messages.delete(id));
+    const result = await db.delete(messages).where(eq(messages.conversationId, conversationId));
     return true;
+  }
+
+  // Device management
+  async registerDevice(userId: string, deviceInfo: { deviceId: string; deviceName: string; deviceType: string }): Promise<UserDevice> {
+    const [device] = await db
+      .insert(userDevices)
+      .values({
+        userId,
+        ...deviceInfo,
+      })
+      .onConflictDoUpdate({
+        target: userDevices.deviceId,
+        set: {
+          lastActive: new Date(),
+          isActive: true,
+        },
+      })
+      .returning();
+    return device;
+  }
+
+  async getUserDevices(userId: string): Promise<UserDevice[]> {
+    return await db
+      .select()
+      .from(userDevices)
+      .where(and(eq(userDevices.userId, userId), eq(userDevices.isActive, true)))
+      .orderBy(desc(userDevices.lastActive));
+  }
+
+  async updateDeviceActivity(deviceId: string): Promise<void> {
+    await db
+      .update(userDevices)
+      .set({ lastActive: new Date() })
+      .where(eq(userDevices.deviceId, deviceId));
+  }
+
+  // Notifications
+  async createNotification(notification: { userId: string; type: string; title: string; message: string; data?: any }): Promise<Notification> {
+    const [newNotification] = await db
+      .insert(notifications)
+      .values({
+        ...notification,
+        data: notification.data || {},
+      })
+      .returning();
+    return newNotification;
+  }
+
+  async getUserNotifications(userId: string, unreadOnly = false): Promise<Notification[]> {
+    const conditions = [eq(notifications.userId, userId)];
+    if (unreadOnly) {
+      conditions.push(eq(notifications.isRead, false));
+    }
+
+    return await db
+      .select()
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationRead(id: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
