@@ -7,6 +7,7 @@ import { enhancedGrokService } from "./services/enhanced-grok";
 import { advancedAI } from "./services/advanced-ai";
 import { visualizationService } from "./services/visualization";
 import { githubService } from "./services/github-integration";
+import { aiFeaturesService } from "./services/ai-features";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   chatCompletionSchema, 
@@ -363,6 +364,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Multimodal analysis error:", error);
       res.status(500).json({ error: "Failed to analyze content" });
+    }
+  });
+
+  // AI Features Endpoints
+  app.post("/api/ai/generate-code", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { prompt, language, includeTests, includeDocumentation } = req.body;
+      
+      if (!prompt || !language) {
+        return res.status(400).json({ error: "Prompt and language are required" });
+      }
+
+      const result = await aiFeaturesService.generateCode(prompt, language, includeTests, includeDocumentation);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Code generation error:", error);
+      res.status(500).json({ error: error.message || "Code generation failed" });
+    }
+  });
+
+  app.post("/api/ai/explain-concept", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { concept, level, context } = req.body;
+      
+      if (!concept || !level) {
+        return res.status(400).json({ error: "Concept and level are required" });
+      }
+
+      const result = await aiFeaturesService.explainConcept(concept, level, context);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Concept explanation error:", error);
+      res.status(500).json({ error: error.message || "Explanation failed" });
+    }
+  });
+
+  app.post("/api/ai/debug-code", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { code, error, language } = req.body;
+      
+      if (!code || !error || !language) {
+        return res.status(400).json({ error: "Code, error, and language are required" });
+      }
+
+      const result = await aiFeaturesService.debugCode(code, error, language);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Code debugging error:", error);
+      res.status(500).json({ error: error.message || "Debugging failed" });
+    }
+  });
+
+  app.post("/api/ai/plan-project", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { description, timeline, complexity } = req.body;
+      
+      if (!description || !timeline || !complexity) {
+        return res.status(400).json({ error: "Description, timeline, and complexity are required" });
+      }
+
+      const result = await aiFeaturesService.planProject(description, timeline, complexity);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Project planning error:", error);
+      res.status(500).json({ error: error.message || "Project planning failed" });
+    }
+  });
+
+  app.post("/api/ai/generate-creative-content", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { type, prompt, tone, length } = req.body;
+      
+      if (!type || !prompt || !tone || !length) {
+        return res.status(400).json({ error: "Type, prompt, tone, and length are required" });
+      }
+
+      const result = await aiFeaturesService.generateContent(type, prompt, tone, length);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Content generation error:", error);
+      res.status(500).json({ error: error.message || "Content generation failed" });
+    }
+  });
+
+  app.get("/api/ai/test-connection", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const result = await aiFeaturesService.testConnection();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Connection test error:", error);
+      res.status(500).json({ error: error.message || "Connection test failed" });
     }
   });
 
