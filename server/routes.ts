@@ -201,6 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Save complete assistant message
           await storage.createMessage({
             conversationId: conversationId!,
+            userId,
             role: "assistant",
             content: assistantContent,
           });
@@ -221,6 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Save assistant message
           await storage.createMessage({
             conversationId: conversationId!,
+            userId,
             role: "assistant",
             content: assistantContent,
           });
@@ -241,28 +243,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Export conversation
-  app.get("/api/conversations/:id/export", async (req: Request, res: Response) => {
+  // Notifications endpoint
+  app.get("/api/notifications", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const unreadOnly = req.query.unread === 'true';
+      const notifications = await storage.getUserNotifications(userId, unreadOnly);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", isAuthenticated, async (req: any, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      await storage.markNotificationRead(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  // Device management
+  app.get("/api/devices", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const devices = await storage.getUserDevices(userId);
+      res.json(devices);
+    } catch (error) {
+      console.error("Error fetching devices:", error);
+      res.status(500).json({ error: "Failed to fetch devices" });
+    }
+  });
+
+  // Export conversation
+  app.get("/api/conversations/:id/export", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
       const conversation = await storage.getConversation(id);
-      const messages = await storage.getMessagesByConversation(id);
       
-      if (!conversation) {
+      if (!conversation || conversation.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
 
+      const messages = await storage.getMessagesByConversation(id);
+      
       const exportData = {
         title: conversation.title,
         model: conversation.model,
-        temperature: conversation.temperature / 100,
+        temperature: (conversation.temperature || 70) / 100,
         systemPrompt: conversation.systemPrompt,
         createdAt: conversation.createdAt,
         messages: messages.map(msg => ({
           role: msg.role,
           content: msg.content,
           timestamp: msg.createdAt
-        }))
+        })),
+        license: "Enterprise License - © 2025 ervin210@icloud.com"
       };
 
       res.json(exportData);
@@ -273,5 +315,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // WebSocket server for real-time synchronization
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const userConnections = new Map<string, Set<WebSocket>>();
+
+  wss.on('connection', (ws: WebSocket, req) => {
+    let userId: string | null = null;
+
+    ws.on('message', async (message: string) => {
+      try {
+        const data = JSON.parse(message);
+        
+        if (data.type === 'auth' && data.userId) {
+          userId = data.userId;
+          
+          if (!userConnections.has(userId)) {
+            userConnections.set(userId, new Set());
+          }
+          userConnections.get(userId)!.add(ws);
+          
+          // Update device activity
+          if (data.deviceId) {
+            await storage.updateDeviceActivity(data.deviceId);
+          }
+          
+          ws.send(JSON.stringify({ type: 'auth_success' }));
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      if (userId && userConnections.has(userId)) {
+        userConnections.get(userId)!.delete(ws);
+        if (userConnections.get(userId)!.size === 0) {
+          userConnections.delete(userId);
+        }
+      }
+    });
+  });
+
   return httpServer;
 }
