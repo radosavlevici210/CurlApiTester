@@ -3,6 +3,9 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { grokService } from "./services/grok";
+import { advancedAI } from "./services/advanced-ai";
+import { visualizationService } from "./services/visualization";
+import { githubService } from "./services/github-integration";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   chatCompletionSchema, 
@@ -277,6 +280,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching devices:", error);
       res.status(500).json({ error: "Failed to fetch devices" });
+    }
+  });
+
+  // Advanced AI Analysis
+  app.post("/api/ai/analyze-code", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { code, language } = req.body;
+      const analysis = await advancedAI.analyzeCode(code, language);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Code analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze code" });
+    }
+  });
+
+  app.post("/api/ai/generate-content", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { template, context } = req.body;
+      const content = await advancedAI.generateContent(template, context);
+      res.json({ content });
+    } catch (error) {
+      console.error("Content generation error:", error);
+      res.status(500).json({ error: "Failed to generate content" });
+    }
+  });
+
+  app.post("/api/ai/multimodal-analysis", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { text, imageBase64 } = req.body;
+      const analysis = await advancedAI.analyzeMultiModal(text, imageBase64);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Multimodal analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze content" });
+    }
+  });
+
+  app.post("/api/ai/solve-problem", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { problem, context } = req.body;
+      const solution = await advancedAI.solveComplexProblem(problem, context);
+      res.json(solution);
+    } catch (error) {
+      console.error("Problem solving error:", error);
+      res.status(500).json({ error: "Failed to solve problem" });
+    }
+  });
+
+  // Visualization APIs
+  app.get("/api/analytics/conversations", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const conversations = await storage.getConversationsByUser(userId);
+      const allMessages = await Promise.all(
+        conversations.map(conv => storage.getMessagesByConversation(conv.id))
+      );
+      const messages = allMessages.flat();
+      
+      const analytics = visualizationService.generateConversationAnalytics(conversations, messages);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Analytics error:", error);
+      res.status(500).json({ error: "Failed to generate analytics" });
+    }
+  });
+
+  app.get("/api/analytics/collaboration", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      // Mock collaboration data - in production, get from real user activity
+      const userIds = [req.user.claims.sub];
+      const activities = [];
+      const collaborationMap = visualizationService.generateCollaborationMap(userIds, activities);
+      res.json(collaborationMap);
+    } catch (error) {
+      console.error("Collaboration analytics error:", error);
+      res.status(500).json({ error: "Failed to generate collaboration analytics" });
+    }
+  });
+
+  // GitHub Integration APIs
+  app.post("/api/github/connect", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { accessToken } = req.body;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const result = await githubService.connectGitHub(user, accessToken);
+      res.json(result);
+    } catch (error) {
+      console.error("GitHub connection error:", error);
+      res.status(500).json({ error: "Failed to connect GitHub" });
+    }
+  });
+
+  app.get("/api/github/repositories", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { accessToken, page = 1, per_page = 30 } = req.query;
+      const repositories = await githubService.getUserRepositories(accessToken, page, per_page);
+      res.json(repositories);
+    } catch (error) {
+      console.error("GitHub repositories error:", error);
+      res.status(500).json({ error: "Failed to fetch repositories" });
+    }
+  });
+
+  app.post("/api/github/analyze-repo", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { accessToken, owner, repo } = req.body;
+      const analysis = await githubService.analyzeRepository(accessToken, owner, repo);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Repository analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze repository" });
+    }
+  });
+
+  // Real-time Collaboration
+  app.post("/api/collaboration/suggest", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { content, userRole, context } = req.body;
+      const suggestions = await advancedAI.getCollaborativeSuggestions(content, userRole, context);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Collaboration suggestions error:", error);
+      res.status(500).json({ error: "Failed to generate suggestions" });
     }
   });
 
