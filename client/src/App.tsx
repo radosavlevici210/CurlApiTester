@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import ChatPage from "@/pages/chat";
 import LandingPage from "@/pages/landing";
+import AIPlayground from "@/pages/AIPlayground";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
         <>
           <Route path="/" component={ChatPage} />
           <Route path="/chat/:id?" component={ChatPage} />
+          <Route path="/ai-playground" component={AIPlayground} />
         </>
       )}
       <Route component={NotFound} />

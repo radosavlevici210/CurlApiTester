@@ -143,7 +143,7 @@ export class EnhancedGrokService {
         improvements: Array.isArray(result.improvements) ? result.improvements : [],
       };
     } catch (error) {
-      throw new Error("Failed to analyze code: " + error.message);
+      throw new Error("Failed to analyze code: " + (error as Error).message);
     }
   }
 
@@ -165,7 +165,11 @@ export class EnhancedGrokService {
       temperature: 0.3,
     });
 
-    const result = {
+    const result: {
+      textAnalysis: string;
+      imageAnalysis?: string;
+      combinedInsights: string;
+    } = {
       textAnalysis: textResponse.choices[0].message.content || "",
       combinedInsights: `Text analysis: ${textResponse.choices[0].message.content}`,
     };

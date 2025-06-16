@@ -221,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Non-streaming response
         try {
           const response = await grokService.createChatCompletion(validatedData, messages);
-          const assistantContent = response.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
+          const assistantContent = (response as any).choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
           
           // Save assistant message
           await storage.createMessage({
@@ -234,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.json({
             content: assistantContent,
             conversationId,
-            usage: response.usage
+            usage: (response as any).usage
           });
         } catch (error) {
           console.error("Chat completion error:", error);
