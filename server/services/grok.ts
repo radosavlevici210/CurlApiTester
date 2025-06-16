@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { ChatCompletionRequest } from "@shared/schema";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export class GrokService {
   private client: OpenAI;
@@ -12,22 +13,22 @@ export class GrokService {
   }
 
   async createChatCompletion(request: ChatCompletionRequest, messages: Array<{role: string, content: string}>) {
-    const systemMessages = request.systemPrompt ? [{ role: "system", content: request.systemPrompt }] : [];
+    const systemMessages: ChatCompletionMessageParam[] = request.systemPrompt ? [{ role: "system", content: request.systemPrompt }] : [];
     
-    const allMessages = [
+    const allMessages: ChatCompletionMessageParam[] = [
       ...systemMessages,
       ...messages.map(msg => ({
         role: msg.role as "user" | "assistant" | "system",
         content: msg.content
-      }))
+      } as ChatCompletionMessageParam))
     ];
 
     const response = await this.client.chat.completions.create({
-      model: request.model,
+      model: request.model || "grok-3-latest",
       messages: allMessages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
-      stream: request.stream,
+      temperature: request.temperature || 0.7,
+      max_tokens: request.maxTokens || 4000,
+      stream: request.stream || false,
     });
 
     return response;
@@ -45,10 +46,10 @@ export class GrokService {
     ];
 
     const stream = await this.client.chat.completions.create({
-      model: request.model,
+      model: request.model || "grok-3-latest",
       messages: allMessages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
+      temperature: request.temperature || 0.7,
+      max_tokens: request.maxTokens || 4000,
       stream: true,
     });
 
