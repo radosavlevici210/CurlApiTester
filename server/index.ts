@@ -28,7 +28,13 @@ app.use(helmet({
 
 // Compression middleware
 app.use(compression({
-  filter: productionOptimization.shouldCompress,
+  filter: (req, res) => {
+    // Don't compress responses with Cache-Control no-transform directive
+    if (req.headers['cache-control'] && req.headers['cache-control'].includes('no-transform')) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
   threshold: 1024
 }));
 

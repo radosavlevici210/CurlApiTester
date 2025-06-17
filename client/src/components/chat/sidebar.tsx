@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Settings, Moon, Sun, Bot, MoreHorizontal } from "lucide-react";
+import { Plus, Settings, Moon, Sun, Bot, MoreHorizontal, Activity } from "lucide-react";
 import type { Conversation } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -122,7 +122,16 @@ export default function Sidebar({
       </div>
 
       {/* Settings */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+        <Link href="/monitoring">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+          >
+            <Activity className="mr-3 h-4 w-4" />
+            Monitoring
+          </Button>
+        </Link>
         <Button
           variant="ghost"
           onClick={onOpenSettings}

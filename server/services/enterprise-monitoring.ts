@@ -1,6 +1,7 @@
 
 import { performance } from 'perf_hooks';
 import { EventEmitter } from 'events';
+import os from 'os';
 
 interface SystemMetrics {
   cpu: {
@@ -73,7 +74,7 @@ export class EnterpriseMonitoringService extends EventEmitter {
       cpu: {
         usage: this.calculateCPUUsage(cpuUsage),
         temperature: 45 + Math.random() * 20, // Mock temperature
-        cores: require('os').cpus().length
+        cores: os.cpus().length
       },
       memory: {
         used: memUsage.heapUsed,

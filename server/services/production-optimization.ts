@@ -203,14 +203,14 @@ export class ProductionOptimizationService {
   }
 
   // API response compression
-  public shouldCompress(req: any, res: any): boolean {
+  public shouldCompress = (req: any, res: any): boolean => {
     if (!this.config.enableCompression) return false;
     
     // Don't compress if response is already compressed
-    if (res.get('Content-Encoding')) return false;
+    if (res.get && res.get('Content-Encoding')) return false;
     
     // Only compress text-based content
-    const contentType = res.get('Content-Type') || '';
+    const contentType = (res.get && res.get('Content-Type')) || '';
     return /json|text|javascript|css|xml/.test(contentType);
   }
 
