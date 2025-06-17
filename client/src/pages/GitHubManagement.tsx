@@ -290,7 +290,7 @@ export default function GitHubManagement() {
                 </div>
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <Refresh className="h-5 w-5 text-blue-600" />
+                    <RefreshCw className="h-5 w-5 text-blue-600" />
                     <h4 className="font-semibold">Auto-Patches</h4>
                   </div>
                   <div className="text-2xl font-bold text-blue-600">12</div>
