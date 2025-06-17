@@ -78,6 +78,10 @@ app.use((req, res, next) => {
   // Import and register enterprise AI routes
   const enterpriseAiRoutes = await import('./routes/enterprise-ai');
   app.use('/api/enterprise', enterpriseAiRoutes.default);
+  
+  // Import and register OpenAI enhanced routes
+  const openaiEnhancedRoutes = await import('./routes/openai-enhanced');
+  app.use('/api/openai', openaiEnhancedRoutes.default);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
