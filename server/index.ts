@@ -3,12 +3,7 @@ import compression from "compression";
 import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { productionOptimization } from "./services/production-optimization";
-import { performanceMonitor } from "./services/performance-monitor";
-import { xaiEnterpriseService } from './services/xai-enterprise';
-import xaiEnterpriseRoutes from './routes/xai-enterprise';
-import { selfRepairService } from './services/self-repair';
-import { enhancedGitHub } from './services/enhanced-github';
+// Import only existing services for now
 
 const app = express();
 
@@ -42,9 +37,7 @@ app.use(compression({
   threshold: 1024
 }));
 
-// Performance monitoring middleware
-app.use(performanceMonitor.trackRequest());
-app.use(productionOptimization.createPerformanceMiddleware());
+// Basic middleware without external dependencies
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
@@ -112,7 +105,3 @@ app.use((req, res, next) => {
   });
 })();
 
-// GitHub integration routes
-  // XAI Enterprise routes
-const xaiEnterpriseRoutes = require("./routes/xai-enterprise").default;
-app.use("/api/xai-enterprise", xaiEnterpriseRoutes);

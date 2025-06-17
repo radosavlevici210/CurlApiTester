@@ -15,7 +15,7 @@ import {
   Shield, 
   CheckCircle,
   Plus,
-  Refresh,
+  RefreshCw,
   Eye,
   Code,
   Users
@@ -99,7 +99,7 @@ export default function GitHubManagement() {
             Create Repository
           </Button>
           <Button variant="outline" onClick={() => setLoading(true)}>
-            <Refresh className="mr-2 h-4 w-4" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Refresh All
           </Button>
         </div>

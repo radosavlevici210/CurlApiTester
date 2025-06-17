@@ -14,7 +14,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onOpenSettings: () => void;
   darkMode: boolean;
-  onToggleDarkMode: () void;
+  onToggleDarkMode: () => void;
 }
 
 export default function Sidebar({
