@@ -19,6 +19,7 @@ import {
   ENTERPRISE_LICENSE
 } from "@shared/schema";
 import { z } from "zod";
+import documents from "./routes/documents.js";
 
 interface ChatRequest extends Request {
   body: z.infer<typeof chatCompletionSchema>;
@@ -698,5 +699,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.use("/api/documents", documents);
   return httpServer;
 }

@@ -245,14 +245,44 @@ export const aiAgents = pgTable("ai_agents", {
 // Real-time Collaboration Engine
 export const collaborationRooms = pgTable("collaboration_rooms", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  workspaceId: integer("workspace_id").references(() => workspaces.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
   ownerId: varchar("owner_id").notNull().references(() => users.id),
   participants: text("participants").array(),
   settings: jsonb("settings"),
   isActive: boolean("is_active").default(true),
-  lastActivity: timestamp("last_activity").defaultNow(),
+  lastActivity: timestamp("last_activity"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const documentVersions = pgTable("document_versions", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  version: varchar("version", { length: 50 }).notNull(),
+  content: text("content"),
+  changes: json("changes").$type<any[]>(),
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  changesSummary: text("changes_summary"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const documentPermissions = pgTable("document_permissions", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  permission: varchar("permission", { length: 20 }).notNull(), // 'read', 'write', 'admin', 'comment'
+  grantedBy: varchar("granted_by", { length: 255 }).notNull(),
+  grantedAt: timestamp("granted_at").defaultNow(),
+});
+
+export const documentCollaborators = pgTable("document_collaborators", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  role: varchar("role", { length: 50 }).notNull(), // 'editor', 'reviewer', 'viewer'
+  joinedAt: timestamp("joined_at").defaultNow(),
+  lastActivity: timestamp("last_activity"),
+  isActive: boolean("is_active").default(true),
 });
 
 // Advanced Document Management
