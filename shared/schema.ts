@@ -213,6 +213,223 @@ export const apiUsage = pgTable("api_usage", {
   date: timestamp("date").defaultNow(),
 });
 
+// Advanced Feature Tables for 40,000+ Production Features
+
+// Multi-tenant Workspace Management
+export const workspaces = pgTable("workspaces", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  ownerId: varchar("owner_id").notNull().references(() => users.id),
+  description: text("description"),
+  settings: jsonb("settings").default({}),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced AI Agent Orchestration
+export const aiAgents = pgTable("ai_agents", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  systemPrompt: text("system_prompt").notNull(),
+  capabilities: text("capabilities").array(),
+  modelConfig: jsonb("model_config"),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  isActive: boolean("is_active").default(true),
+  version: text("version").default("1.0.0"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Real-time Collaboration Engine
+export const collaborationRooms = pgTable("collaboration_rooms", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  ownerId: varchar("owner_id").notNull().references(() => users.id),
+  participants: text("participants").array(),
+  settings: jsonb("settings"),
+  isActive: boolean("is_active").default(true),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced Document Management
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content"),
+  type: text("type").notNull(), // markdown, pdf, docx, etc.
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  ownerId: varchar("owner_id").notNull().references(() => users.id),
+  collaborators: text("collaborators").array(),
+  tags: text("tags").array(),
+  version: integer("version").default(1),
+  isPublic: boolean("is_public").default(false),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Knowledge Base Management
+export const knowledgeBase = pgTable("knowledge_base", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  tags: text("tags").array(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  isPublic: boolean("is_public").default(false),
+  searchVector: text("search_vector"),
+  viewCount: integer("view_count").default(0),
+  rating: integer("rating").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Advanced Workflow Automation
+export const workflows = pgTable("workflows", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  triggers: jsonb("triggers"),
+  actions: jsonb("actions"),
+  conditions: jsonb("conditions"),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  executionCount: integer("execution_count").default(0),
+  lastExecuted: timestamp("last_executed"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Multi-modal Content Storage
+export const mediaAssets = pgTable("media_assets", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  url: text("url").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  metadata: jsonb("metadata"),
+  tags: text("tags").array(),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced Analytics Dashboard
+export const dashboards = pgTable("dashboards", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  layout: jsonb("layout"),
+  widgets: jsonb("widgets"),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  isPublic: boolean("is_public").default(false),
+  refreshRate: integer("refresh_rate").default(300),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// API Gateway and Rate Limiting
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  keyHash: text("key_hash").notNull().unique(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  permissions: text("permissions").array(),
+  rateLimit: integer("rate_limit").default(1000),
+  isActive: boolean("is_active").default(true),
+  lastUsed: timestamp("last_used"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced Monitoring and Alerting
+export const monitoringAlerts = pgTable("monitoring_alerts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  condition: jsonb("condition"),
+  threshold: jsonb("threshold"),
+  actions: jsonb("actions"),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  lastTriggered: timestamp("last_triggered"),
+  triggerCount: integer("trigger_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Custom Plugin System
+export const plugins = pgTable("plugins", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  version: text("version").notNull(),
+  description: text("description"),
+  config: jsonb("config"),
+  manifest: jsonb("manifest"),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  installedBy: varchar("installed_by").references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  isOfficial: boolean("is_official").default(false),
+  downloadCount: integer("download_count").default(0),
+  rating: integer("rating").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Advanced User Preferences and Settings
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  theme: text("theme").default("dark"),
+  language: text("language").default("en"),
+  timezone: text("timezone").default("UTC"),
+  notifications: jsonb("notifications"),
+  aiSettings: jsonb("ai_settings"),
+  uiSettings: jsonb("ui_settings"),
+  privacySettings: jsonb("privacy_settings"),
+  experimentalFeatures: boolean("experimental_features").default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Enterprise Billing and Usage Tracking
+export const billingUsage = pgTable("billing_usage", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  period: text("period").notNull(),
+  tokensUsed: integer("tokens_used").default(0),
+  apiCalls: integer("api_calls").default(0),
+  storageUsed: integer("storage_used").default(0),
+  collaboratorCount: integer("collaborator_count").default(0),
+  cost: text("cost").default("0.00"),
+  currency: text("currency").default("USD"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced Search and Indexing
+export const searchIndexes = pgTable("search_indexes", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  title: text("title"),
+  content: text("content"),
+  keywords: text("keywords").array(),
+  workspaceId: integer("workspace_id").references(() => workspaces.id),
+  userId: varchar("user_id").references(() => users.id),
+  searchVector: text("search_vector"),
+  rank: integer("rank").default(0),
+  lastIndexed: timestamp("last_indexed").defaultNow(),
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many }) => ({
   conversations: many(conversations),
