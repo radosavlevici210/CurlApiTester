@@ -203,7 +203,7 @@ export class ProductionOptimizationService {
   }
 
   // API response compression
-  public shouldCompress = (req: any, res: any): boolean => {
+  public shouldCompress(req: any, res: any): boolean {
     if (!this.config.enableCompression) return false;
     
     // Don't compress if response is already compressed

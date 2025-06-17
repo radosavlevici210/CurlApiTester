@@ -121,7 +121,7 @@ export default function Sidebar({
         </ScrollArea>
       </div>
 
-      {/* Settings */}
+      {/* Navigation & Features */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
         <Link href="/monitoring">
           <Button
@@ -129,7 +129,25 @@ export default function Sidebar({
             className="w-full justify-start"
           >
             <Activity className="mr-3 h-4 w-4" />
-            Monitoring
+            Enterprise Monitoring
+          </Button>
+        </Link>
+        <Link href="/ai-features">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+          >
+            <Bot className="mr-3 h-4 w-4" />
+            AI Features
+          </Button>
+        </Link>
+        <Link href="/ai-playground">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+          >
+            <Plus className="mr-3 h-4 w-4" />
+            AI Playground
           </Button>
         </Link>
         <Button
