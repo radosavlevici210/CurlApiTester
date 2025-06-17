@@ -126,6 +126,93 @@ export const githubIntegrations = pgTable("github_integrations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Advanced AI Models and Configurations
+export const aiModels = pgTable("ai_models", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  provider: text("provider").notNull(),
+  modelId: text("model_id").notNull(),
+  maxTokens: integer("max_tokens").default(4096),
+  temperature: text("temperature").default("0.7"),
+  systemPrompt: text("system_prompt"),
+  isActive: boolean("is_active").default(true),
+  licenseRequired: text("license_required").default("free"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Team Collaboration Features
+export const collaborationSessions = pgTable("collaboration_sessions", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  sessionName: text("session_name").notNull(),
+  participants: text("participants").array(),
+  isActive: boolean("is_active").default(true),
+  permissions: jsonb("permissions"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced Analytics and Insights
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  eventType: text("event_type").notNull(),
+  eventData: jsonb("event_data"),
+  sessionId: text("session_id"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// AI Model Performance Metrics
+export const modelMetrics = pgTable("model_metrics", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").references(() => aiModels.id),
+  userId: varchar("user_id").references(() => users.id),
+  responseTime: integer("response_time"),
+  tokenUsage: integer("token_usage"),
+  cost: text("cost"),
+  userSatisfaction: integer("user_satisfaction"),
+  date: timestamp("date").defaultNow(),
+});
+
+// Business Templates for Enterprise
+export const businessTemplates = pgTable("business_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  description: text("description"),
+  template: text("template").notNull(),
+  variables: jsonb("variables"),
+  licenseRequired: text("license_required").default("pro"),
+  isPublic: boolean("is_public").default(false),
+  createdBy: varchar("created_by").references(() => users.id),
+  usageCount: integer("usage_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced Security and Audit Logs
+export const securityLogs = pgTable("security_logs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  action: text("action").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  details: jsonb("details"),
+  riskLevel: text("risk_level").default("low"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// API Usage Tracking
+export const apiUsage = pgTable("api_usage", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  endpoint: text("endpoint").notNull(),
+  method: text("method").notNull(),
+  statusCode: integer("status_code"),
+  responseTime: integer("response_time"),
+  tokensCost: integer("tokens_cost").default(0),
+  date: timestamp("date").defaultNow(),
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many }) => ({
   conversations: many(conversations),
