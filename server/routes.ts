@@ -8,6 +8,8 @@ import { advancedAI } from "./services/advanced-ai";
 import { visualizationService } from "./services/visualization";
 import { githubService } from "./services/github-integration";
 import { aiFeaturesService } from "./services/ai-features";
+import { enterpriseMonitoring } from "./services/enterprise-monitoring";
+import { productionOptimization } from "./services/production-optimization";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   chatCompletionSchema, 
@@ -550,6 +552,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Collaboration suggestions error:", error);
       res.status(500).json({ error: "Failed to generate suggestions" });
+    }
+  });
+
+  // Enterprise Monitoring Endpoints
+  app.get("/api/monitoring/health", async (req: Request, res: Response) => {
+    try {
+      const health = enterpriseMonitoring.generateHealthReport();
+      res.json(health);
+    } catch (error) {
+      console.error("Health check error:", error);
+      res.status(500).json({ error: "Health check failed" });
+    }
+  });
+
+  app.get("/api/monitoring/metrics", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const timeRange = req.query.range as '1h' | '6h' | '24h' | '7d' || '1h';
+      const metrics = enterpriseMonitoring.getMetrics(timeRange);
+      res.json({ metrics, summary: enterpriseMonitoring.getCurrentMetrics() });
+    } catch (error) {
+      console.error("Metrics error:", error);
+      res.status(500).json({ error: "Failed to fetch metrics" });
+    }
+  });
+
+  app.get("/api/monitoring/alerts", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const type = req.query.type as any;
+      const resolved = req.query.resolved === 'true' ? true : req.query.resolved === 'false' ? false : undefined;
+      const alerts = enterpriseMonitoring.getAlerts(type, resolved);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Alerts error:", error);
+      res.status(500).json({ error: "Failed to fetch alerts" });
+    }
+  });
+
+  app.patch("/api/monitoring/alerts/:id/resolve", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const alertId = req.params.id;
+      const resolved = enterpriseMonitoring.resolveAlert(alertId);
+      res.json({ success: resolved });
+    } catch (error) {
+      console.error("Alert resolution error:", error);
+      res.status(500).json({ error: "Failed to resolve alert" });
+    }
+  });
+
+  app.get("/api/performance/cache-stats", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const stats = productionOptimization.getCacheStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Cache stats error:", error);
+      res.status(500).json({ error: "Failed to fetch cache stats" });
+    }
+  });
+
+  app.get("/api/performance/optimization", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const memoryCheck = productionOptimization.checkMemoryUsage();
+      const healthCheck = productionOptimization.createHealthCheck();
+      res.json({ memory: memoryCheck, health: healthCheck });
+    } catch (error) {
+      console.error("Performance optimization error:", error);
+      res.status(500).json({ error: "Failed to fetch optimization data" });
     }
   });
 

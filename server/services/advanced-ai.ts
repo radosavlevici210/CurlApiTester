@@ -7,7 +7,7 @@ export class AdvancedAIService {
   constructor(apiKey?: string) {
     this.client = new OpenAI({
       baseURL: "https://api.x.ai/v1",
-      apiKey: apiKey || process.env.XAI_API_KEY || "",
+      apiKey: apiKey || process.env.XAI_API_KEY || "xai-S7I8XppKfvDbktadkCq5ShsXjXz2OmqH9cfbNx3OVUeZplqAvLMHTccTy0kI26iRfGpRS7NHJzFt9HUW",
     });
   }
 

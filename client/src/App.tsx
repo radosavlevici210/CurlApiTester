@@ -8,6 +8,7 @@ import ChatPage from "@/pages/chat";
 import LandingPage from "@/pages/landing";
 import AIPlayground from "@/pages/AIPlayground";
 import NotFound from "@/pages/not-found";
+import EnterpriseMonitoring from "@/pages/EnterpriseMonitoring";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -21,6 +22,7 @@ function Router() {
           <Route path="/" component={ChatPage} />
           <Route path="/chat/:id?" component={ChatPage} />
           <Route path="/ai-playground" component={AIPlayground} />
+          <Route path="/monitoring" component={EnterpriseMonitoring} />
         </>
       )}
       <Route component={NotFound} />
