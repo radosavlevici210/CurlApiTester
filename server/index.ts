@@ -5,6 +5,10 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { productionOptimization } from "./services/production-optimization";
 import { performanceMonitor } from "./services/performance-monitor";
+import { xaiEnterpriseService } from './services/xai-enterprise';
+import xaiEnterpriseRoutes from './routes/xai-enterprise';
+import { selfRepairService } from './services/self-repair';
+import { enhancedGitHub } from './services/enhanced-github';
 
 const app = express();
 

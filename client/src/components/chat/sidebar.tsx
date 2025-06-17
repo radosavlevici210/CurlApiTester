@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Settings, Moon, Sun, Bot, MoreHorizontal, Activity, Sparkles, Github, Brain } from "lucide-react";
+import { Plus, Settings, Moon, Sun, Bot, MoreHorizontal, Activity, Sparkles, Github, Brain, BarChart3, GitBranch, Shield } from "lucide-react";
 import type { Conversation } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -14,7 +14,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onOpenSettings: () => void;
   darkMode: boolean;
-  onToggleDarkMode: () => void;
+  onToggleDarkMode: () void;
 }
 
 export default function Sidebar({
@@ -129,16 +129,28 @@ export default function Sidebar({
             Monitoring
           </Button>
         </Link>
-        <Link href="/ai-playground">
+        <Link href="/enterprise-visualization">
           <Button variant="ghost" className="w-full justify-start">
-            <Sparkles className="mr-3 h-4 w-4" />
-            AI Playground
+            <BarChart3 className="mr-3 h-4 w-4" />
+            Analytics
           </Button>
         </Link>
-        <Link href="/github">
+        <Link href="/xai-enterprise">
           <Button variant="ghost" className="w-full justify-start">
-            <Github className="mr-3 h-4 w-4" />
-            GitHub Integration
+            <Brain className="mr-3 h-4 w-4" />
+            AI Enterprise
+          </Button>
+        </Link>
+        <Link href="/github-management">
+          <Button variant="ghost" className="w-full justify-start">
+            <GitBranch className="mr-3 h-4 w-4" />
+            GitHub
+          </Button>
+        </Link>
+        <Link href="/security-center">
+          <Button variant="ghost" className="w-full justify-start">
+            <Shield className="mr-3 h-4 w-4" />
+            Security
           </Button>
         </Link>
         <Button

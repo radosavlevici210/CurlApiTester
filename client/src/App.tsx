@@ -10,7 +10,10 @@ import AIPlayground from "@/pages/AIPlayground";
 import XAIEnterprise from "./pages/XAIEnterprise";
 import GitHubIntegration from "./components/github/github-integration";
 import NotFound from "@/pages/not-found";
-import EnterpriseMonitoring from "@/pages/EnterpriseMonitoring";
+import EnterpriseMonitoring from "./pages/EnterpriseMonitoring";
+import EnterpriseVisualization from "./pages/EnterpriseVisualization";
+import GitHubManagement from "./pages/GitHubManagement";
+import SecurityCenter from "./pages/SecurityCenter";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,6 +30,10 @@ function Router() {
           <Route path="/xai-enterprise" component={XAIEnterprise} />
           <Route path="/github" component={GitHubIntegration} />
           <Route path="/monitoring" component={EnterpriseMonitoring} />
+            <Route path="/xai-enterprise" component={XAIEnterprise} />
+            <Route path="/enterprise-visualization" component={EnterpriseVisualization} />
+            <Route path="/github-management" component={GitHubManagement} />
+            <Route path="/security-center" component={SecurityCenter} />
         </>
       )}
       <Route component={NotFound} />

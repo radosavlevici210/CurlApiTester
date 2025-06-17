@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userId = req.user.claims.sub;
       const conversation = await storage.getConversation(id);
-      
+
       if (!conversation || conversation.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
@@ -84,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId,
       });
-      
+
       const conversation = await storage.createConversation(validatedData);
       res.json(conversation);
     } catch (error) {
@@ -99,13 +99,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userId = req.user.claims.sub;
       const validatedData = updateConversationSchema.parse(req.body);
-      
+
       // Verify ownership
       const existing = await storage.getConversation(id);
       if (!existing || existing.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
-      
+
       const conversation = await storage.updateConversation(id, validatedData);
       res.json(conversation);
     } catch (error) {
@@ -119,13 +119,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const userId = req.user.claims.sub;
-      
+
       // Verify ownership
       const existing = await storage.getConversation(id);
       if (!existing || existing.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
-      
+
       const deleted = await storage.deleteConversation(id);
       res.json({ success: true });
     } catch (error) {
@@ -139,17 +139,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const validatedData = chatCompletionSchema.parse(req.body);
-      
+
       // Get existing messages if conversationId provided
       let messages: Array<{role: string, content: string}> = [];
       let conversationId = validatedData.conversationId;
-      
+
       if (conversationId) {
         const conversation = await storage.getConversation(conversationId);
         if (!conversation || conversation.userId !== userId) {
           return res.status(404).json({ error: "Conversation not found" });
         }
-        
+
         const existingMessages = await storage.getMessagesByConversation(conversationId);
         messages = existingMessages.map(msg => ({
           role: msg.role,
@@ -196,15 +196,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         let assistantContent = "";
-        
+
         try {
           const stream = grokService.createStreamingCompletion(validatedData, messages);
-          
+
           for await (const chunk of stream) {
             assistantContent += chunk;
             res.write(`data: ${JSON.stringify({ content: chunk, conversationId })}\n\n`);
           }
-          
+
           // Save complete assistant message
           await storage.createMessage({
             conversationId: conversationId!,
@@ -212,20 +212,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: "assistant",
             content: assistantContent,
           });
-          
+
           res.write(`data: [DONE]\n\n`);
         } catch (error) {
           console.error("Streaming error:", error);
           res.write(`data: ${JSON.stringify({ error: "Failed to generate response" })}\n\n`);
         }
-        
+
         res.end();
       } else {
         // Non-streaming response
         try {
           const response = await grokService.createChatCompletion(validatedData, messages);
           const assistantContent = (response as any).choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
-          
+
           // Save assistant message
           await storage.createMessage({
             conversationId: conversationId!,
@@ -233,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: "assistant",
             content: assistantContent,
           });
-          
+
           res.json({
             content: assistantContent,
             conversationId,
@@ -373,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/generate-code", isAuthenticated, async (req: any, res: Response) => {
     try {
       const { prompt, language, includeTests, includeDocumentation } = req.body;
-      
+
       if (!prompt || !language) {
         return res.status(400).json({ error: "Prompt and language are required" });
       }
@@ -389,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/explain-concept", isAuthenticated, async (req: any, res: Response) => {
     try {
       const { concept, level, context } = req.body;
-      
+
       if (!concept || !level) {
         return res.status(400).json({ error: "Concept and level are required" });
       }
@@ -405,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/debug-code", isAuthenticated, async (req: any, res: Response) => {
     try {
       const { code, error, language } = req.body;
-      
+
       if (!code || !error || !language) {
         return res.status(400).json({ error: "Code, error, and language are required" });
       }
@@ -421,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/plan-project", isAuthenticated, async (req: any, res: Response) => {
     try {
       const { description, timeline, complexity } = req.body;
-      
+
       if (!description || !timeline || !complexity) {
         return res.status(400).json({ error: "Description, timeline, and complexity are required" });
       }
@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/generate-creative-content", isAuthenticated, async (req: any, res: Response) => {
     try {
       const { type, prompt, tone, length } = req.body;
-      
+
       if (!type || !prompt || !tone || !length) {
         return res.status(400).json({ error: "Type, prompt, tone, and length are required" });
       }
@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversations.map(conv => storage.getMessagesByConversation(conv.id))
       );
       const messages = allMessages.flat();
-      
+
       const analytics = visualizationService.generateConversationAnalytics(conversations, messages);
       res.json(analytics);
     } catch (error) {
@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { accessToken } = req.body;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -627,13 +627,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userId = req.user.claims.sub;
       const conversation = await storage.getConversation(id);
-      
+
       if (!conversation || conversation.userId !== userId) {
         return res.status(404).json({ error: "Conversation not found" });
       }
 
       const messages = await storage.getMessagesByConversation(id);
-      
+
       const exportData = {
         title: conversation.title,
         model: conversation.model,
@@ -656,7 +656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  
+
   // WebSocket server for real-time synchronization
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const userConnections = new Map<string, Set<WebSocket>>();
@@ -667,20 +667,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('message', async (message: string) => {
       try {
         const data = JSON.parse(message);
-        
+
         if (data.type === 'auth' && data.userId) {
           userId = data.userId;
-          
+
           if (!userConnections.has(userId)) {
             userConnections.set(userId, new Set());
           }
           userConnections.get(userId)!.add(ws);
-          
+
           // Update device activity
           if (data.deviceId) {
             await storage.updateDeviceActivity(data.deviceId);
           }
-          
+
           ws.send(JSON.stringify({ type: 'auth_success' }));
         }
       } catch (error) {
