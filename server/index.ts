@@ -107,3 +107,8 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 })();
+
+// GitHub integration routes
+  // XAI Enterprise routes
+const xaiEnterpriseRoutes = require("./routes/xai-enterprise").default;
+app.use("/api/xai-enterprise", xaiEnterpriseRoutes);

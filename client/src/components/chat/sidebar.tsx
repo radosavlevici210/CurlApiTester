@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Settings, Moon, Sun, Bot, MoreHorizontal, Activity } from "lucide-react";
+import { Plus, Settings, Moon, Sun, Bot, MoreHorizontal, Activity, Sparkles, Github, Brain } from "lucide-react";
 import type { Conversation } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -124,30 +124,21 @@ export default function Sidebar({
       {/* Navigation & Features */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
         <Link href="/monitoring">
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-          >
+          <Button variant="ghost" className="w-full justify-start">
             <Activity className="mr-3 h-4 w-4" />
-            Enterprise Monitoring
-          </Button>
-        </Link>
-        <Link href="/ai-features">
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-          >
-            <Bot className="mr-3 h-4 w-4" />
-            AI Features
+            Monitoring
           </Button>
         </Link>
         <Link href="/ai-playground">
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-          >
-            <Plus className="mr-3 h-4 w-4" />
+          <Button variant="ghost" className="w-full justify-start">
+            <Sparkles className="mr-3 h-4 w-4" />
             AI Playground
+          </Button>
+        </Link>
+        <Link href="/github">
+          <Button variant="ghost" className="w-full justify-start">
+            <Github className="mr-3 h-4 w-4" />
+            GitHub Integration
           </Button>
         </Link>
         <Button
@@ -159,9 +150,9 @@ export default function Sidebar({
           Settings
         </Button>
       </div>
-      
+
       {/* Copyright Notice */}
-      <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-2 px-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-2">
         © {new Date().getFullYear()} Ervin Remus Radosavlevici. All rights reserved.
       </div>
     </div>

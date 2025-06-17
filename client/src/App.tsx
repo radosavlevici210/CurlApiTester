@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import ChatPage from "@/pages/chat";
 import LandingPage from "@/pages/landing";
 import AIPlayground from "@/pages/AIPlayground";
+import XAIEnterprise from "./pages/XAIEnterprise";
+import GitHubIntegration from "./components/github/github-integration";
 import NotFound from "@/pages/not-found";
 import EnterpriseMonitoring from "@/pages/EnterpriseMonitoring";
 
@@ -22,6 +24,8 @@ function Router() {
           <Route path="/" component={ChatPage} />
           <Route path="/chat/:id?" component={ChatPage} />
           <Route path="/ai-playground" component={AIPlayground} />
+          <Route path="/xai-enterprise" component={XAIEnterprise} />
+          <Route path="/github" component={GitHubIntegration} />
           <Route path="/monitoring" component={EnterpriseMonitoring} />
         </>
       )}
