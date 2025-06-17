@@ -1,4 +1,3 @@
-
 import { performance } from 'perf_hooks';
 import { EventEmitter } from 'events';
 import os from 'os';
@@ -69,7 +68,7 @@ export class EnterpriseMonitoringService extends EventEmitter {
   private async collectMetrics(): Promise<SystemMetrics> {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
+
     const metrics: SystemMetrics = {
       cpu: {
         usage: this.calculateCPUUsage(cpuUsage),
@@ -103,7 +102,7 @@ export class EnterpriseMonitoringService extends EventEmitter {
 
     this.metrics.push(metrics);
     this.checkThresholds(metrics);
-    
+
     // Keep only last 1000 metrics
     if (this.metrics.length > 1000) {
       this.metrics = this.metrics.slice(-500);
@@ -203,7 +202,7 @@ export class EnterpriseMonitoringService extends EventEmitter {
   public generateHealthReport() {
     const current = this.getCurrentMetrics();
     const activeAlerts = this.getAlerts(undefined, false);
-    
+
     return {
       status: activeAlerts.some(a => a.type === 'critical') ? 'critical' : 
               activeAlerts.some(a => a.type === 'warning') ? 'warning' : 'healthy',
