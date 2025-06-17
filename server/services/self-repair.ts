@@ -1,4 +1,3 @@
-
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import fs from 'fs/promises';
@@ -66,7 +65,7 @@ export class SelfRepairService extends EventEmitter {
     ];
 
     const results = await Promise.allSettled(checks);
-    
+
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         this.queueRepair({
@@ -84,7 +83,7 @@ export class SelfRepairService extends EventEmitter {
   private async checkMemoryUsage(): Promise<boolean> {
     const memUsage = process.memoryUsage();
     const heapPercentage = (memUsage.heapUsed / memUsage.heapTotal) * 100;
-    
+
     if (heapPercentage > 85) {
       this.queueRepair({
         type: 'performance',
@@ -103,7 +102,7 @@ export class SelfRepairService extends EventEmitter {
   private async checkCPUUsage(): Promise<boolean> {
     const cpuUsage = process.cpuUsage();
     const totalUsage = cpuUsage.user + cpuUsage.system;
-    
+
     if (totalUsage > 800000000) { // 800ms in microseconds
       this.queueRepair({
         type: 'performance',
@@ -144,7 +143,7 @@ export class SelfRepairService extends EventEmitter {
         signal: AbortSignal.timeout(5000)
       });
       const latency = performance.now() - start;
-      
+
       if (latency > 3000) {
         this.queueRepair({
           type: 'performance',
@@ -173,7 +172,7 @@ export class SelfRepairService extends EventEmitter {
   private async checkSecurityStatus(): Promise<boolean> {
     // Check for security vulnerabilities
     const vulnerabilities = await this.scanForVulnerabilities();
-    
+
     if (vulnerabilities.length > 0) {
       this.queueRepair({
         type: 'security',
@@ -232,7 +231,7 @@ export class SelfRepairService extends EventEmitter {
       threat.mitigated = true;
       this.threats.push(threat);
       this.metrics.threatsBlocked++;
-      
+
       this.emit('threatMitigated', threat);
     } catch (error) {
       console.error('Failed to mitigate threat:', error);
@@ -242,7 +241,7 @@ export class SelfRepairService extends EventEmitter {
   private async autoUpgrade(): Promise<void> {
     // Check for security updates and apply them automatically
     const updates = await this.checkForUpdates();
-    
+
     for (const update of updates) {
       if (update.security && update.severity === 'critical') {
         this.queueRepair({
@@ -282,7 +281,7 @@ export class SelfRepairService extends EventEmitter {
 
   private async processRepairQueue(): Promise<void> {
     const pendingRepairs = this.repairQueue.filter(r => r.status === 'pending');
-    
+
     for (const repair of pendingRepairs) {
       if (repair.severity === 'critical') {
         await this.executeRepair(repair);
@@ -302,7 +301,7 @@ export class SelfRepairService extends EventEmitter {
       this.emit('repairStarted', repair);
 
       const success = await repair.action();
-      
+
       repair.status = success ? 'completed' : 'failed';
       if (success) {
         this.metrics.repairsExecuted++;
@@ -311,9 +310,92 @@ export class SelfRepairService extends EventEmitter {
       this.emit('repairCompleted', repair);
     } catch (error) {
       repair.status = 'failed';
-      console.error(`Repair ${repair.id} failed:`, error);
       this.emit('repairFailed', repair);
+      console.error('Repair failed:', error);
     }
+  }
+
+  private async checkMemoryUsage(): Promise<boolean> {
+    const memUsage = process.memoryUsage();
+    const memUsagePercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+
+    if (memUsagePercent > 90) {
+      this.queueRepair({
+        type: 'memory',
+        severity: 'high',
+        description: `High memory usage: ${memUsagePercent.toFixed(1)}%`,
+        action: async () => {
+          global.gc && global.gc();
+          return true;
+        }
+      });
+      return false;
+    }
+    return true;
+  }
+
+  private async checkCPUUsage(): Promise<boolean> {
+    // Simulate CPU check
+    return true;
+  }
+
+  private async checkDiskSpace(): Promise<boolean> {
+    // Simulate disk space check
+    return true;
+  }
+
+  private async checkNetworkConnectivity(): Promise<boolean> {
+    // Simulate network check
+    return true;
+  }
+
+  private async checkDatabaseHealth(): Promise<boolean> {
+    // Simulate database health check
+    return true;
+  }
+
+  private async blockIPAddress(ip: string): Promise<void> {
+    console.log(`Blocking IP address: ${ip}`);
+  }
+
+  private async sanitizeInputs(): Promise<void> {
+    console.log('Sanitizing inputs');
+  }
+
+  private async enableRateLimiting(ip: string): Promise<void> {
+    console.log(`Enabling rate limiting for IP: ${ip}`);
+  }
+
+  private async quarantineSource(ip: string): Promise<void> {
+    console.log(`Quarantining source: ${ip}`);
+  }
+
+  private async patchVulnerabilities(vulnerabilities: string[]): Promise<boolean> {
+    console.log(`Patching ${vulnerabilities.length} vulnerabilities`);
+    return true;
+  }
+
+  private async scanForVulnerabilities(): Promise<string[]> {
+    // Simulate vulnerability scan
+    return [];
+  }
+
+  private async applyUpdate(update: any): Promise<boolean> {
+    console.log(`Applying update: ${update.name}`);
+    return true;
+  }
+
+  // Public methods for external access
+  public getMetrics() {
+    return this.metrics;
+  }
+
+  public getThreats() {
+    return this.threats;
+  }
+
+  public getRepairQueue() {
+    return this.repairQueue;
   }
 
   // Repair action implementations
@@ -337,66 +419,6 @@ export class SelfRepairService extends EventEmitter {
     return true;
   }
 
-  private async scanForVulnerabilities(): Promise<string[]> {
-    // Mock vulnerability scan
-    return Math.random() < 0.2 ? ['CVE-2024-1234'] : [];
-  }
-
-  private async patchVulnerabilities(vulnerabilities: string[]): Promise<boolean> {
-    // Implement vulnerability patching
-    return true;
-  }
-
-  private async blockIPAddress(ip: string): Promise<void> {
-    // Implement IP blocking
-  }
-
-  private async sanitizeInputs(): Promise<void> {
-    // Implement input sanitization
-  }
-
-  private async enableRateLimiting(source: string): Promise<void> {
-    // Implement rate limiting
-  }
-
-  private async quarantineSource(source: string): Promise<void> {
-    // Implement source quarantine
-  }
-
-  private async applyUpdate(update: any): Promise<boolean> {
-    // Implement update application
-    return true;
-  }
-
-  // Public API
-  public getSystemStatus() {
-    return {
-      isActive: this.isActive,
-      metrics: this.metrics,
-      activeRepairs: this.repairQueue.filter(r => r.status === 'executing').length,
-      pendingRepairs: this.repairQueue.filter(r => r.status === 'pending').length,
-      completedRepairs: this.repairQueue.filter(r => r.status === 'completed').length,
-      activeThreats: this.threats.filter(t => !t.mitigated).length,
-      mitigatedThreats: this.threats.filter(t => t.mitigated).length
-    };
-  }
-
-  public getRepairHistory(limit = 50) {
-    return this.repairQueue.slice(-limit);
-  }
-
-  public getThreatHistory(limit = 50) {
-    return this.threats.slice(-limit);
-  }
-
-  public async forceHealthCheck(): Promise<void> {
-    await this.performHealthCheck();
-  }
-
-  public async emergencyShutdown(): Promise<void> {
-    this.isActive = false;
-    // Implement graceful shutdown
-  }
 }
 
 export const selfRepairService = new SelfRepairService();

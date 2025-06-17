@@ -1,4 +1,6 @@
-import { WebSocket } from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
+import { EventEmitter } from 'events';
+import { createServer } from 'http';
 import { db } from '../db';
 import { collaborationSessions, conversations, users } from '../../shared/schema';
 import { eq, and, inArray } from 'drizzle-orm';
@@ -275,7 +277,7 @@ export class CollaborationEngine {
     if (!session) return null;
 
     const participants = Array.from(this.participants.get(sessionId)?.values() || []);
-    
+
     // Get conversation details
     const [conversation] = await db.select().from(conversations)
       .where(eq(conversations.id, session.conversationId));

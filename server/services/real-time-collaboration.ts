@@ -1,4 +1,6 @@
-import { WebSocket } from "ws";
+import WebSocket, { WebSocketServer } from 'ws';
+import { EventEmitter } from 'events';
+import { createServer } from 'http';
 import { db } from "../db.js";
 import { collaborationRooms, documents, users } from "../../shared/schema.js";
 import { eq, and, inArray } from "drizzle-orm";
@@ -13,9 +15,32 @@ interface CollaborationClient {
   selection?: { start: number; end: number };
 }
 
-export class RealTimeCollaboration {
+export class RealTimeCollaboration extends EventEmitter {
   private rooms: Map<string, CollaborationClient[]> = new Map();
   private clients: Map<string, CollaborationClient> = new Map();
+  private wss: WebSocketServer;
+
+  constructor() {
+    super();
+    // Create HTTP server for WebSocket
+    const server = createServer();
+    this.wss = new WebSocketServer({ server });
+    this.setupWebSocketHandlers();
+
+    // Start server on port 8081
+    server.listen(8081, () => {
+      console.log('Real-time collaboration server listening on port 8081');
+    });
+  }
+
+  private setupWebSocketHandlers() {
+    this.wss.on('connection', (ws) => {
+      console.log('Client connected');
+      ws.on('message', (message) => {
+        console.log('Received message', message);
+      });
+    });
+  }
 
   async createRoom(data: {
     name: string;
@@ -36,7 +61,7 @@ export class RealTimeCollaboration {
 
   async joinRoom(roomId: string, userId: string, ws: WebSocket) {
     const room = await db.select().from(collaborationRooms).where(eq(collaborationRooms.id, parseInt(roomId))).limit(1);
-    
+
     if (!room[0] || !room[0].isActive) {
       throw new Error("Room not found or inactive");
     }
@@ -56,11 +81,11 @@ export class RealTimeCollaboration {
     };
 
     this.clients.set(clientId, client);
-    
+
     if (!this.rooms.has(roomId)) {
       this.rooms.set(roomId, []);
     }
-    
+
     this.rooms.get(roomId)!.push(client);
 
     // Notify other participants
@@ -104,7 +129,7 @@ export class RealTimeCollaboration {
     try {
       const data = JSON.parse(message);
       const client = this.clients.get(clientId);
-      
+
       if (!client) return;
 
       switch (data.type) {
@@ -260,7 +285,7 @@ export class RealTimeCollaboration {
     if (!roomClients) return;
 
     const messageStr = JSON.stringify(message);
-    
+
     roomClients.forEach(client => {
       if (client.id !== excludeClientId && client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(messageStr);
@@ -302,7 +327,7 @@ export class RealTimeCollaboration {
     await db.update(collaborationRooms)
       .set({ isActive: false })
       .where(eq(collaborationRooms.id, id));
-    
+
     return true;
   }
 

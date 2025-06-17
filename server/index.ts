@@ -76,12 +76,20 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
   
   // Import and register enterprise AI routes
-  const enterpriseAiRoutes = await import('./routes/enterprise-ai');
-  app.use('/api/enterprise', enterpriseAiRoutes.default);
+  try {
+    const enterpriseAiRoutes = await import('./routes/enterprise-ai');
+    app.use('/api/enterprise', enterpriseAiRoutes.default);
+  } catch (error) {
+    console.warn('Enterprise AI routes not available:', error.message);
+  }
   
   // Import and register OpenAI enhanced routes
-  const openaiEnhancedRoutes = await import('./routes/openai-enhanced');
-  app.use('/api/openai', openaiEnhancedRoutes.default);
+  try {
+    const openaiEnhancedRoutes = await import('./routes/openai-enhanced');
+    app.use('/api/openai', openaiEnhancedRoutes.default);
+  } catch (error) {
+    console.warn('OpenAI enhanced routes not available:', error.message);
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

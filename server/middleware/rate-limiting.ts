@@ -1,6 +1,6 @@
 
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
+import { RedisStore } from 'rate-limit-redis';
 import Redis from 'ioredis';
 
 interface RateLimitConfig {
