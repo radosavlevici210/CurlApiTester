@@ -1,7 +1,7 @@
 
 import { Router, Request, Response } from "express";
 import { documentManager } from "../services/document-manager.js";
-import { isAuthenticated } from "../middleware/rate-limiting.js";
+import { isAuthenticated } from "../replitAuth.js";
 
 const router = Router();
 
